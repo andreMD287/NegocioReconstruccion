@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package reconstruccion.v1;
+
+option csharp_namespace = "Reconstruccion.Contratos.V1";
+
+// Contrato de salida hacia el proyecto Cierre.
+//
+// Reconstruccion implementa el cliente gRPC.
+// Cierre implementa el servidor.
+//
+// La aceptacion significa registro durable de la
+// notificacion, no cierre formal del desastre.
+//
+// Las versiones sirven para ordenar los eventos por desastre
+// y evitar cerrar un plan con una version obsoleta.
+
+service CierreService {
+  rpc NotificarPlanCompletado (
+    NotificarPlanCompletadoRequest
+  ) returns (RespuestaCierreGrpc);
+
+  rpc NotificarReapertura (
+    NotificarReaperturaRequest
+  ) returns (RespuestaCierreGrpc);
+}
+
+// Notificacion generada cuando el plan pasa a Completado.
+message NotificarPlanCompletadoRequest {
+  string desastre_id = 1;
+  int64 version_plan = 2;
+}
+
+// Notificacion generada cuando el plan vuelve a Abierto.
+message NotificarReaperturaRequest {
+  string desastre_id = 1;
+  int64 version_plan = 2;
+}
+
+// Equivale a RespuestaCierre en Aplicacion.
+message RespuestaCierreGrpc {
+  // true: Cierre registro durablemente la notificacion.
+  bool aceptada = 1;
+
+  // Motivo cuando no se acepta.
+  optional string motivo = 2;
+}

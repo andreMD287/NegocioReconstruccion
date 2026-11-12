@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package reconstruccion.v1;
+
+option csharp_namespace = "Reconstruccion.Contratos.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// Contratos de solo lectura.
+// Alineados con Aplicacion.Consultas e ILecturaReconstruccion.
+// La autorizacion se verifica en Aplicacion.
+
+service ConsultasService {
+  rpc ConsultarSeguimientoConsolidado (
+    ConsultarSeguimientoConsolidadoRequest
+  ) returns (SeguimientoConsolidadoResponse);
+
+  rpc ConsultarDetalleProyecto (
+    ConsultarDetalleProyectoRequest
+  ) returns (DetalleProyectoResponse);
+
+  rpc ConsultarHistorialAuditoria (
+    ConsultarHistorialAuditoriaRequest
+  ) returns (PaginaAuditoriaResponse);
+}
+
+// Representa una entrada de los diccionarios de seguimiento.
+message ConteoPorCategoriaGrpc {
+  string categoria = 1;
+  int32 cantidad = 2;
+}
+
+// ConsultarSeguimientoConsolidado.
+message ConsultarSeguimientoConsolidadoRequest {
+  string desastre_id = 1;
+}
+
+// Equivale a SeguimientoConsolidadoDto.
+message SeguimientoConsolidadoResponse {
+  string desastre_id = 1;
+  string estado_plan = 2;
+  int64 version_plan = 3;
+
+  repeated ConteoPorCategoriaGrpc proyectos_por_estado = 4;
+
+  // Decimales exactos representados como texto.
+  string presupuesto_vigente_decimal = 5;
+  string costo_ejecutado_decimal = 6;
+  string avance_ponderado_decimal = 7;
+
+  repeated ConteoPorCategoriaGrpc necesidades_por_estado = 8;
+  repeated ConteoPorCategoriaGrpc alertas_activas = 9;
+}
+
+// ConsultarDetalleProyecto.
+message ConsultarDetalleProyectoRequest {
+  string proyecto_id = 1;
+}
+
+// Equivale a HitoVistaDto.
+message HitoVistaGrpc {
+  string hito_id = 1;
+  string nombre = 2;
+  string fecha_inicio = 3; // YYYY-MM-DD
+  string fecha_fin = 4;    // YYYY-MM-DD
+  string peso_decimal = 5;
+  string avance_decimal = 6;
+}
+
+// Equivale a CambioPresupuestalVistaDto.
+message CambioPresupuestalVistaGrpc {
+  string cambio_id = 1;
+  string estado = 2;
+
+  string presupuesto_anterior_decimal = 3;
+  string presupuesto_nuevo_decimal = 4;
+
+  string solicitante_id = 5;
+  optional string resolutor_id = 6;
+
+  google.protobuf.Timestamp fecha_solicitud = 7;
+
+  // La presencia de este campo representa un valor no nulo.
+  google.protobuf.Timestamp fecha_resolucion = 8;
+
+  string motivo = 9;
+}
+
+// Equivale a AlertaVistaDto.
+message AlertaVistaGrpc {
+  string alerta_id = 1;
+  string tipo = 2;
+  string estado = 3;
+  google.protobuf.Timestamp fecha = 4;
+  string descripcion = 5;
+}
+
+// Equivale a DocumentoVistaDto.
+message DocumentoVistaGrpc {
+  string documento_id = 1;
+  string tipo = 2;
+  string nombre = 3;
+  string ubicacion = 4;
+  google.protobuf.Timestamp fecha_registro = 5;
+}
+
+// Equivale a DetalleProyectoDto.
+message DetalleProyectoResponse {
+  string proyecto_id = 1;
+  string desastre_id = 2;
+  string nombre = 3;
+  string descripcion = 4;
+
+  string tipo = 5;
+  string estado = 6;
+  int64 version = 7;
+
+  string formulador_id = 8;
+  optional string responsable_id = 9;
+  optional string contratista = 10;
+
+  string presupuesto_vigente_decimal = 11;
+  string costo_ejecutado_decimal = 12;
+  string avance_decimal = 13;
+
+  repeated string necesidad_ids = 14;
+  repeated HitoVistaGrpc hitos = 15;
+  repeated CambioPresupuestalVistaGrpc cambios_presupuestales = 16;
+  repeated AlertaVistaGrpc alertas = 17;
+  repeated DocumentoVistaGrpc documentos = 18;
+}
+
+// ConsultarHistorialAuditoria.
+// Los filtros opcionales no restringen cuando se omiten.
+message ConsultarHistorialAuditoriaRequest {
+  optional string desastre_id = 1;
+  optional string objeto_id = 2;
+
+  google.protobuf.Timestamp desde = 3;
+  google.protobuf.Timestamp hasta = 4;
+
+  // Si es 0, el adaptador usa los valores predeterminados
+  // de Aplicacion: pagina 1 y tamano 50.
+  int32 pagina = 5;
+  int32 tamano_pagina = 6;
+}
+
+// Equivale a EntradaAuditoriaDto.
+message EntradaAuditoriaGrpc {
+  google.protobuf.Timestamp fecha = 1;
+  string usuario_id = 2;
+  string rol = 3;
+
+  string accion = 4;
+  string tipo_objeto = 5;
+  string objeto_id = 6;
+
+  string resultado = 7;
+  optional string detalle = 8;
+}
+
+// Equivale a Pagina<EntradaAuditoriaDto>.
+message PaginaAuditoriaResponse {
+  repeated EntradaAuditoriaGrpc elementos = 1;
+  int32 numero_pagina = 2;
+  int32 tamano_pagina = 3;
+  int32 total = 4;
+}

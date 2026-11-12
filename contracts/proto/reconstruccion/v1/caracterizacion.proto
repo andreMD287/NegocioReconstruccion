@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package reconstruccion.v1;
+
+option csharp_namespace = "Reconstruccion.Contratos.V1";
+
+import "google/protobuf/timestamp.proto";
+
+// Contrato de entrada desde Caracterizacion.
+// Alineado con Reconstruccion.Aplicacion.Integracion.
+// Los mensajes no son IComando: su idempotencia depende
+// de EvaluacionId/VersionEvaluacion o VersionCiclo.
+
+service CaracterizacionService {
+  rpc RecibirNecesidades (RecibirNecesidadesRequest)
+      returns (RecibirNecesidadesResponse);
+
+  rpc RecibirCambioEvaluacion (RecibirCambioEvaluacionRequest)
+      returns (RecibirCambioEvaluacionResponse);
+
+  rpc RecibirFinCaracterizacion (RecibirFinCaracterizacionRequest)
+      returns (RecibirFinCaracterizacionResponse);
+}
+
+// Equivale a UbicacionDto.
+message UbicacionEvaluacion {
+  double latitud = 1;
+  double longitud = 2;
+  optional string descripcion = 3;
+}
+
+// Equivale a EvaluacionRecibidaDto.
+// NivelDano es texto porque las categorias son configurables.
+message EvaluacionRecibida {
+  string evaluacion_id = 1;
+  int64 version_evaluacion = 2;
+  string activo_id = 3;
+  string tipo_activo = 4;
+  string nivel_dano = 5;
+  google.protobuf.Timestamp fecha_validacion = 6;
+  UbicacionEvaluacion ubicacion = 7;
+  bool validada = 8;
+  bool requiere_intervencion = 9;
+}
+
+// RecibirNecesidades: RN-RE-02, 04, 18 y 22.
+message RecibirNecesidadesRequest {
+  string desastre_id = 1;
+  int32 version_ciclo = 2;
+  repeated EvaluacionRecibida evaluaciones = 3;
+}
+
+enum MotivoEvaluacionNoAceptadaGrpc {
+  MOTIVO_EVALUACION_NO_ESPECIFICADO = 0;
+  MOTIVO_EVALUACION_REPETIDA = 1;
+  MOTIVO_EVALUACION_OBSOLETA = 2;
+  MOTIVO_EVALUACION_CONTRATO_INCUMPLIDO = 3;
+  MOTIVO_EVALUACION_PLAN_CERRADO = 4;
+}
+
+message EvaluacionNoAceptadaGrpc {
+  string evaluacion_id = 1;
+  MotivoEvaluacionNoAceptadaGrpc motivo = 2;
+}
+
+// Equivale a ResultadoRecepcionNecesidades.
+message RecibirNecesidadesResponse {
+  repeated string necesidades_creadas = 1;
+  repeated EvaluacionNoAceptadaGrpc no_aceptadas = 2;
+  int64 version_plan = 3;
+}
+
+enum TipoCambioEvaluacionGrpc {
+  TIPO_CAMBIO_EVALUACION_NO_ESPECIFICADO = 0;
+  TIPO_CAMBIO_EVALUACION_CORRECCION = 1;
+  TIPO_CAMBIO_EVALUACION_REVOCACION = 2;
+}
+
+// En una correccion, datos_corregidos viene informado.
+// En una revocacion, se omite.
+// Equivale a RecibirCambioEvaluacion.
+message RecibirCambioEvaluacionRequest {
+  string desastre_id = 1;
+  string evaluacion_id = 2;
+  int64 version_evaluacion = 3;
+  TipoCambioEvaluacionGrpc tipo = 4;
+  EvaluacionRecibida datos_corregidos = 5;
+}
+
+// Equivale a ResultadoCambioEvaluacion.
+message RecibirCambioEvaluacionResponse {
+  optional string necesidad_id = 1;
+  bool alerta_generada = 2;
+  bool registrado_como_rectificacion = 3;
+  bool obsoleto = 4;
+  int64 version_plan = 5;
+}
+
+// RN-RE-22.
+// VersionCiclo y CantidadEsperada son int32 en Aplicacion.
+message RecibirFinCaracterizacionRequest {
+  string desastre_id = 1;
+  int32 version_ciclo = 2;
+  int32 cantidad_esperada = 3;
+}
+
+// Equivale a RespuestaFinCaracterizacion.
+enum RespuestaFinCaracterizacionGrpc {
+  RESPUESTA_FIN_NO_ESPECIFICADA = 0;
+  RESPUESTA_FIN_ACEPTADA = 1;
+  RESPUESTA_FIN_FALTAN_EVALUACIONES = 2;
+  RESPUESTA_FIN_NO_HAY_PLAN_APLICABLE = 3;
+  RESPUESTA_FIN_OBSOLETA = 4;
+}
+
+// Representacion de EstadoPlan.
+// El valor no especificado no es un estado de dominio.
+enum EstadoPlanGrpc {
+  ESTADO_PLAN_NO_ESPECIFICADO = 0;
+  ESTADO_PLAN_ABIERTO = 1;
+  ESTADO_PLAN_COMPLETADO = 2;
+  ESTADO_PLAN_CERRADO = 3;
+}
+
+// Equivale a ResultadoFinCaracterizacion.
+//
+// Una respuesta ACEPTADA puede acompañarse de
+// EstadoPlanGrpc = COMPLETADO o ABIERTO.
+// No se confunde aceptar el fin con completar el plan.
+message RecibirFinCaracterizacionResponse {
+  RespuestaFinCaracterizacionGrpc respuesta = 1;
+  int32 evaluaciones_recibidas = 2;
+  optional EstadoPlanGrpc estado_plan = 3;
+  optional int64 version_plan = 4;
+}

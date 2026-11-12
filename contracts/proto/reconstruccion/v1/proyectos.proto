@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package reconstruccion.v1;
+
+option csharp_namespace = "Reconstruccion.Contratos.V1";
+
+// Contratos gRPC de comandos.
+// Alineados con los records de Aplicacion del commit c7a0531.
+// Los errores de negocio se comunican mediante estados gRPC.
+
+service ProyectosService {
+  rpc CrearProyecto (CrearProyectoRequest)
+      returns (ResultadoComandoConPlanResponse);
+  rpc EditarPresupuestoPropuesto (EditarPresupuestoPropuestoRequest)
+      returns (ResultadoComandoResponse);
+  rpc AprobarProyecto (AprobarProyectoRequest)
+      returns (ResultadoComandoResponse);
+  rpc RechazarProyecto (RechazarProyectoRequest)
+      returns (ResultadoComandoConPlanResponse);
+  rpc IniciarProyecto (IniciarProyectoRequest)
+      returns (ResultadoComandoResponse);
+  rpc SuspenderProyecto (SuspenderProyectoRequest)
+      returns (ResultadoComandoResponse);
+  rpc ReanudarProyecto (ReanudarProyectoRequest)
+      returns (ResultadoComandoResponse);
+  rpc CancelarProyecto (CancelarProyectoRequest)
+      returns (ResultadoComandoConPlanResponse);
+  rpc FinalizarProyecto (FinalizarProyectoRequest)
+      returns (ResultadoComandoConPlanResponse);
+
+  rpc AsignarParticipantes (AsignarParticipantesRequest)
+      returns (ResultadoComandoResponse);
+  rpc DefinirCronograma (DefinirCronogramaRequest)
+      returns (ResultadoComandoResponse);
+  rpc ReprogramarHito (ReprogramarHitoRequest)
+      returns (ResultadoComandoResponse);
+  rpc RegistrarAvance (RegistrarAvanceRequest)
+      returns (ResultadoComandoResponse);
+  rpc RegistrarCosto (RegistrarCostoRequest)
+      returns (ResultadoComandoResponse);
+  rpc AdjuntarDocumento (AdjuntarDocumentoRequest)
+      returns (ResultadoComandoResponse);
+
+  rpc SolicitarCambioPresupuesto (SolicitarCambioPresupuestoRequest)
+      returns (ResultadoComandoResponse);
+  rpc ResolverCambioPresupuesto (ResolverCambioPresupuestoRequest)
+      returns (ResultadoComandoResponse);
+  rpc RetirarCambioPresupuesto (RetirarCambioPresupuestoRequest)
+      returns (ResultadoComandoResponse);
+
+  rpc DescartarNecesidad (DescartarNecesidadRequest)
+      returns (ResultadoComandoResponse);
+  rpc ReactivarNecesidad (ReactivarNecesidadRequest)
+      returns (ResultadoComandoResponse);
+  rpc ResolverAlerta (ResolverAlertaRequest)
+      returns (ResultadoComandoResponse);
+}
+
+// ResultadoComando de Aplicacion.
+message ResultadoComandoResponse {
+  string id = 1;
+  int64 nueva_version = 2;
+}
+
+// ResultadoComandoConPlan de Aplicacion.
+message ResultadoComandoConPlanResponse {
+  string proyecto_id = 1;
+  int64 nueva_version = 2;
+  int64 nueva_version_plan = 3;
+}
+
+// Valores monetarios y porcentajes se transmiten
+// como string decimal exacto, nunca double.
+// Ejemplos: "150000.00", "25.50".
+
+message AporteDtoGrpc {
+  string fuente = 1;
+  string monto_decimal = 2;
+}
+
+message ResponsableDtoGrpc {
+  string usuario_id = 1;
+  string organismo_id = 2;
+}
+
+message ContratistaDtoGrpc {
+  string identificacion = 1;
+  string nombre = 2;
+}
+
+message HitoDtoGrpc {
+  string nombre = 1;
+  string fecha_inicio = 2; // YYYY-MM-DD
+  string fecha_fin = 3;    // YYYY-MM-DD
+  string peso_decimal = 4;
+}
+
+message ReferenciaEvidenciaDtoGrpc {
+  string identificador = 1;
+  string tipo = 2;
+  string ubicacion = 3;
+}
+
+enum TipoProyectoGrpc {
+  TIPO_PROYECTO_NO_ESPECIFICADO = 0;
+  TIPO_PROYECTO_RECUPERACION = 1;
+  TIPO_PROYECTO_RECONSTRUCCION = 2;
+}
+
+enum TipoDocumentoGrpc {
+  TIPO_DOCUMENTO_NO_ESPECIFICADO = 0;
+  TIPO_DOCUMENTO_ACTA_ENTREGA = 1;
+  TIPO_DOCUMENTO_CONTRATO = 2;
+  TIPO_DOCUMENTO_ADMINISTRATIVO = 3;
+  TIPO_DOCUMENTO_OTRO = 4;
+}
+
+enum UbicacionAlertaGrpc {
+  UBICACION_ALERTA_NO_ESPECIFICADA = 0;
+  UBICACION_ALERTA_PLAN = 1;
+  UBICACION_ALERTA_PROYECTO = 2;
+}
+
+// GRUPO B: ciclo de vida.
+
+message CrearProyectoRequest {
+  string request_id = 1;
+  string desastre_id = 2;
+  int64 expected_version_plan = 3;
+  string nombre = 4;
+  string descripcion = 5;
+  TipoProyectoGrpc tipo = 6;
+  repeated string necesidad_ids = 7;
+}
+
+message EditarPresupuestoPropuestoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string presupuesto_decimal = 4;
+  repeated AporteDtoGrpc aportes = 5;
+}
+
+message AprobarProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+}
+
+message RechazarProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  int64 expected_version_plan = 4;
+  string motivo = 5;
+}
+
+message IniciarProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+}
+
+message SuspenderProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string motivo = 4;
+}
+
+message ReanudarProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+}
+
+message CancelarProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  int64 expected_version_plan = 4;
+  string motivo = 5;
+}
+
+message FinalizarProyectoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  int64 expected_version_plan = 4;
+}
+
+// GRUPO C: gestion operativa.
+
+message AsignarParticipantesRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+
+  // Omitir uno de los mensajes significa no modificarlo.
+  ResponsableDtoGrpc responsable = 4;
+  ContratistaDtoGrpc contratista = 5;
+}
+
+message DefinirCronogramaRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string fecha_inicio = 4;
+  string fecha_fin = 5;
+  repeated HitoDtoGrpc hitos = 6;
+}
+
+message ReprogramarHitoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string hito_id = 4;
+  string nueva_fecha_inicio = 5;
+  string nueva_fecha_fin = 6;
+  string motivo = 7;
+}
+
+message RegistrarAvanceRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string hito_id = 4;
+  string porcentaje_decimal = 5;
+  string fecha_efectiva = 6;
+  repeated ReferenciaEvidenciaDtoGrpc evidencias = 7;
+  optional string motivo_correccion = 8;
+}
+
+message RegistrarCostoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string monto_decimal = 4;
+  string concepto = 5;
+  string fecha_efectiva = 6;
+  optional string costo_revertido_id = 7;
+  optional string motivo_reverso = 8;
+}
+
+message AdjuntarDocumentoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  TipoDocumentoGrpc tipo = 4;
+  string nombre = 5;
+  string ubicacion = 6;
+}
+
+// GRUPO D: presupuesto.
+
+message SolicitarCambioPresupuestoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string nuevo_presupuesto_decimal = 4;
+  repeated AporteDtoGrpc nuevos_aportes = 5;
+  string motivo = 6;
+}
+
+message ResolverCambioPresupuestoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string cambio_id = 4;
+  bool aprobar = 5;
+  optional string motivo = 6;
+}
+
+message RetirarCambioPresupuestoRequest {
+  string request_id = 1;
+  string proyecto_id = 2;
+  int64 expected_version = 3;
+  string cambio_id = 4;
+  string motivo = 5;
+}
+
+// GRUPO A: operaciones sobre necesidades y alertas.
+
+message DescartarNecesidadRequest {
+  string request_id = 1;
+  string desastre_id = 2;
+  int64 expected_version_plan = 3;
+  string necesidad_id = 4;
+  string justificacion = 5;
+}
+
+message ReactivarNecesidadRequest {
+  string request_id = 1;
+  string desastre_id = 2;
+  int64 expected_version_plan = 3;
+  string necesidad_id = 4;
+  string justificacion = 5;
+}
+
+message ResolverAlertaRequest {
+  string request_id = 1;
+  UbicacionAlertaGrpc ubicacion = 2;
+  string agregado_id = 3;
+  int64 expected_version = 4;
+  string alerta_id = 5;
+  string justificacion = 6;
+}
