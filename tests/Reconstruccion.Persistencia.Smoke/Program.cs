@@ -107,6 +107,108 @@ try
     // PRUEBA DE NECESIDADES Y UBICACION JSONB
     // ==========================================
 
+    // ==========================================
+    // PRUEBA DE CONCURRENCIA OPTIMISTA
+    // ==========================================
+
+    Console.WriteLine("Iniciando prueba de concurrencia.");
+
+    using (var contextoA = new ReconstruccionDbContext(opciones))
+    using (var contextoB = new ReconstruccionDbContext(opciones))
+    {
+        await contextoA.Database.UseTransactionAsync(transaccion);
+        await contextoB.Database.UseTransactionAsync(transaccion);
+
+        // Ambos leen el mismo proyecto ANTES de guardar.
+        var proyectoA = await contextoA.Proyectos
+            .SingleAsync(p => p.Id == proyectoId);
+
+        var proyectoB = await contextoB.Proyectos
+            .SingleAsync(p => p.Id == proyectoId);
+
+        var versionOriginal = proyectoA.Version;
+
+        if (proyectoB.Version != versionOriginal)
+            throw new Exception("Los contextos no cargaron la misma version.");
+
+        Console.WriteLine(
+            $"Ambos contextos cargaron la version {versionOriginal}."
+        );
+
+        // El contexto A modifica el responsable.
+        var nuevoUsuarioId = Guid.NewGuid();
+
+        proyectoA.AsignarParticipantes(
+            new Responsable(nuevoUsuarioId, Guid.NewGuid()),
+            null,
+            DateTimeOffset.UtcNow
+        );
+
+        await contextoA.SaveChangesAsync();
+
+        Console.WriteLine(
+            $"Contexto A guardo la version {proyectoA.Version}."
+        );
+
+        // El contexto B conserva la version anterior.
+        proyectoB.AsignarParticipantes(
+            null,
+            new Contratista("PRUEBA-B", "Contratista B"),
+            DateTimeOffset.UtcNow
+        );
+
+        var conflictoDetectado = false;
+
+        try
+        {
+            await contextoB.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            conflictoDetectado = true;
+
+            Console.WriteLine(
+                "DbUpdateConcurrencyException detectada correctamente."
+            );
+        }
+
+        if (!conflictoDetectado)
+        {
+            throw new Exception(
+                "ERROR: El contexto B sobrescribio datos sin detectar conflicto."
+            );
+        }
+
+        // Tercer contexto: comprobar el estado real almacenado.
+        using (var contextoVerificacion =
+            new ReconstruccionDbContext(opciones))
+        {
+            await contextoVerificacion.Database
+                .UseTransactionAsync(transaccion);
+
+            var proyectoFinal = await contextoVerificacion.Proyectos
+                .SingleAsync(p => p.Id == proyectoId);
+
+            if (proyectoFinal.Version != versionOriginal + 1)
+                throw new Exception("La version final es incorrecta.");
+
+            if (proyectoFinal.Responsable?.UsuarioId != nuevoUsuarioId)
+                throw new Exception("No se conservo el cambio del contexto A.");
+
+            if (proyectoFinal.Contratista?.Nombre != "Contratista de prueba")
+                throw new Exception("El contexto B sobrescribio el contratista.");
+
+            Console.WriteLine(
+                "Version y participantes finales verificados."
+            );
+
+            Console.WriteLine(
+                "El cambio obsoleto no sobrescribio los datos."
+            );
+        }
+    }
+
+    Console.WriteLine("PRUEBA DE CONCURRENCIA SUPERADA.");
     Console.WriteLine("Iniciando prueba de necesidad y JSONB.");
 
     var evaluacionId = Guid.NewGuid();
