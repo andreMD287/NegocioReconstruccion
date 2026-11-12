@@ -1,3 +1,4 @@
+using Reconstruccion.Dominio.Comun;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Reconstruccion.Dominio.Planes;
@@ -100,6 +101,130 @@ try
         Console.WriteLine("Proyecto recuperado correctamente.");
         Console.WriteLine("Presupuesto, necesidades y aportes verificados.");
         Console.WriteLine("Responsable, contratista y version verificados.");
+    }
+
+    // ==========================================
+    // PRUEBA DE NECESIDADES Y UBICACION JSONB
+    // ==========================================
+
+    Console.WriteLine("Iniciando prueba de necesidad y JSONB.");
+
+    var evaluacionId = Guid.NewGuid();
+
+    var origenInicial = new EvaluacionOrigen(
+        evaluacionId,
+        1,
+        Guid.NewGuid(),
+        "Edificio",
+        "Alto",
+        DateTimeOffset.UtcNow,
+        new Ubicacion(4.65, -74.10, "Ubicacion inicial")
+    );
+
+    var planConNecesidad = PlanReconstruccion.Abrir(
+        Guid.NewGuid(),
+        Guid.NewGuid()
+    );
+
+    planConNecesidad.RecibirEvaluaciones(
+        1,
+        new[] { new EvaluacionEntrante(origenInicial, true, true) },
+        Guid.NewGuid,
+        DateTimeOffset.UtcNow
+    );
+
+    if (planConNecesidad.Necesidades.Count != 1)
+        throw new Exception("No se creo la necesidad.");
+
+    var necesidadIdReal = planConNecesidad.Necesidades.Single().Id;
+    var planConNecesidadId = planConNecesidad.Id;
+
+    // A. Guardar necesidad en PostgreSQL
+    using (var alta = new ReconstruccionDbContext(opciones))
+    {
+        await alta.Database.UseTransactionAsync(transaccion);
+
+        alta.Planes.Add(planConNecesidad);
+
+        await alta.SaveChangesAsync();
+    }
+
+    Console.WriteLine("Necesidad y ubicacion inicial guardadas.");
+
+    // B. Recuperar, comprobar y corregir la evaluacion
+    using (var actualizacion = new ReconstruccionDbContext(opciones))
+    {
+        await actualizacion.Database.UseTransactionAsync(transaccion);
+
+        var planCargado = await actualizacion.Planes
+            .Include(p => p.Necesidades)
+            .Include(p => p.Alertas)
+            .SingleAsync(p => p.Id == planConNecesidadId);
+
+        var necesidadCargada = planCargado.Necesidades.Single();
+
+        if (necesidadCargada.Id != necesidadIdReal)
+            throw new Exception("La necesidad recuperada no coincide.");
+
+        if (necesidadCargada.Origen.Ubicacion.Descripcion != "Ubicacion inicial")
+            throw new Exception("No se recupero la ubicacion inicial.");
+
+        if (necesidadCargada.Origen.VersionEvaluacion != 1)
+            throw new Exception("No se recupero la version de evaluacion.");
+
+        Console.WriteLine("Necesidad y JSONB recuperados correctamente.");
+
+        var origenCorregido = origenInicial with
+        {
+            VersionEvaluacion = 2,
+            Ubicacion = new Ubicacion(
+                4.66,
+                -74.09,
+                "Ubicacion corregida"
+            )
+        };
+
+        planCargado.AplicarCambioEvaluacion(
+            evaluacionId,
+            2,
+            TipoCambioOrigen.Correccion,
+            origenCorregido,
+            DateTimeOffset.UtcNow
+        );
+
+        await actualizacion.SaveChangesAsync();
+
+        Console.WriteLine("Correccion de evaluacion guardada.");
+    }
+
+    // C. Abrir otro contexto para comprobar los cambios
+    using (var verificacion = new ReconstruccionDbContext(opciones))
+    {
+        await verificacion.Database.UseTransactionAsync(transaccion);
+
+        var planFinal = await verificacion.Planes
+            .Include(p => p.Necesidades)
+            .Include(p => p.Alertas)
+            .SingleAsync(p => p.Id == planConNecesidadId);
+
+        var necesidadFinal = planFinal.Necesidades.Single();
+
+        if (necesidadFinal.Origen.VersionEvaluacion != 2)
+            throw new Exception("No se actualizo la version de evaluacion.");
+
+        if (necesidadFinal.Origen.Ubicacion !=
+            new Ubicacion(4.66, -74.09, "Ubicacion corregida"))
+            throw new Exception("No se guardo la ubicacion corregida.");
+
+        if (planFinal.Alertas.Count != 1)
+            throw new Exception("No se recupero la alerta de correccion.");
+
+        if (planFinal.Version <= 0)
+            throw new Exception("No se conservo la version del Plan.");
+
+        Console.WriteLine("Ubicacion corregida recuperada desde PostgreSQL.");
+        Console.WriteLine("Alerta y version del Plan verificadas.");
+        Console.WriteLine("PRUEBA JSONB SUPERADA.");
     }
 
     await transaccion.RollbackAsync();
