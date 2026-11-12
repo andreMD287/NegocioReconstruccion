@@ -1,3 +1,4 @@
+using Reconstruccion.Infraestructura.Persistencia.Repositorios;
 using Reconstruccion.Dominio.Comun;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -56,8 +57,11 @@ try
     {
         await escritura.Database.UseTransactionAsync(transaccion);
 
-        escritura.Planes.Add(plan);
-        escritura.Proyectos.Add(proyecto);
+        var repositorioPlanesAlta = new RepositorioPlanesEf(escritura);
+        var repositorioProyectosAlta = new RepositorioProyectosEf(escritura);
+
+        repositorioPlanesAlta.Agregar(plan);
+        repositorioProyectosAlta.Agregar(proyecto);
 
         var guardados = await escritura.SaveChangesAsync();
 
@@ -111,6 +115,104 @@ try
     // PRUEBA DE CONCURRENCIA OPTIMISTA
     // ==========================================
 
+    // ==========================================
+    // PRUEBA REAL DE REPOSITORIOS
+    // ==========================================
+
+    Console.WriteLine("Iniciando prueba de repositorios EF Core.");
+
+    using (var contextoRepositorios = new ReconstruccionDbContext(opciones))
+    {
+        await contextoRepositorios.Database
+            .UseTransactionAsync(transaccion);
+
+        var repositorioPlanes =
+            new RepositorioPlanesEf(contextoRepositorios);
+
+        var repositorioProyectos =
+            new RepositorioProyectosEf(contextoRepositorios);
+
+        // Recuperar el Plan por DesastreId
+        var planRepositorio = await repositorioPlanes
+            .ObtenerPorDesastreAsync(desastreId);
+
+        if (planRepositorio is null)
+            throw new Exception("El repositorio no recupero el Plan.");
+
+        if (planRepositorio.Id != planId)
+            throw new Exception("El repositorio recupero otro Plan.");
+
+        // Recuperar el Proyecto por su identificador
+        var proyectoRepositorio = await repositorioProyectos
+            .ObtenerPorIdAsync(proyectoId);
+
+        if (proyectoRepositorio is null)
+            throw new Exception("El repositorio no recupero el Proyecto.");
+
+        if (proyectoRepositorio.DesastreId != desastreId)
+            throw new Exception("El Proyecto pertenece a otro desastre.");
+
+        if (proyectoRepositorio.Presupuesto != 75000m)
+            throw new Exception("El presupuesto no coincide.");
+
+        if (!proyectoRepositorio.NecesidadIds.Contains(necesidadId))
+            throw new Exception("No se recuperaron las necesidades.");
+
+        if (proyectoRepositorio.Aportes.Count != 1)
+            throw new Exception("No se recuperaron los aportes owned.");
+
+        if (proyectoRepositorio.Responsable is null)
+            throw new Exception("No se recupero el responsable.");
+
+        // Ambos agregados deben permanecer tracked
+        var estadoPlan = contextoRepositorios
+            .Entry(planRepositorio).State;
+
+        var estadoProyecto = contextoRepositorios
+            .Entry(proyectoRepositorio).State;
+
+        if (estadoPlan != EntityState.Unchanged)
+            throw new Exception("El Plan no esta siendo rastreado.");
+
+        if (estadoProyecto != EntityState.Unchanged)
+            throw new Exception("El Proyecto no esta siendo rastreado.");
+
+        Console.WriteLine(
+            "Plan y Proyecto recuperados correctamente mediante repositorios."
+        );
+
+        Console.WriteLine(
+            "Colecciones owned y seguimiento EF Core verificados."
+        );
+
+        // Comprobar que un proyecto inexistente devuelve null
+        var inexistente = await repositorioProyectos
+            .ObtenerPorIdAsync(Guid.NewGuid());
+
+        if (inexistente is not null)
+            throw new Exception("Se recupero un proyecto inexistente.");
+
+        // Comprobar listado de proyectos en ejecucion
+        var idsRepositorio = await repositorioProyectos
+            .ListarIdsEnEjecucionAsync();
+
+        var idsConsulta = await contextoRepositorios.Proyectos
+            .Where(p => p.Estado == EstadoProyecto.EnEjecucion)
+            .Select(p => p.Id)
+            .ToListAsync();
+
+        if (!idsRepositorio.OrderBy(id => id)
+            .SequenceEqual(idsConsulta.OrderBy(id => id)))
+        {
+            throw new Exception(
+                "La consulta de proyectos en ejecucion no coincide."
+            );
+        }
+
+        Console.WriteLine("Consultas de repositorios verificadas.");
+    }
+
+    Console.WriteLine("PRUEBA DE REPOSITORIOS SUPERADA.");
     Console.WriteLine("Iniciando prueba de concurrencia.");
 
     using (var contextoA = new ReconstruccionDbContext(opciones))
