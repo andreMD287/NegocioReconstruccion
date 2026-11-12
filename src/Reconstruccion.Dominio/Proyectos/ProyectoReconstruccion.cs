@@ -445,7 +445,9 @@ public sealed class ProyectoReconstruccion : AgregadoRaiz
         Presupuesto = cambio.PresupuestoNuevo;
         VersionPresupuesto++;
         _aportes.Clear();
-        _aportes.AddRange(cambio.NuevosAportes);
+        // Copias: el cambio conserva sus aportes como historial (RN-RE-08) y cada instancia
+        // owned debe pertenecer a un solo dueño en la persistencia.
+        _aportes.AddRange(cambio.NuevosAportes.Select(a => a with { }));
         Registrar(new CambioPresupuestalResuelto(DesastreId, Id, Version, ahora, cambio.Id, cambio.Estado));
         RevisarSobrecosto(ahora);
     }

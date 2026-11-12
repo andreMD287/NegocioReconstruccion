@@ -56,8 +56,10 @@ public sealed record CambioPresupuestalResuelto(Guid DesastreId, Guid AgregadoId
 
 // --- Alertas (plan o proyecto) -------------------------------------------------
 
+/// <param name="EnPlan">La alerta está en el plan (necesidad no asignada) y no en un proyecto.</param>
 public sealed record AlertaGenerada(Guid DesastreId, Guid AgregadoId, long VersionAgregado, DateTimeOffset OcurridoEn,
-    Guid AlertaId, TipoAlerta Tipo, Guid ObjetoId) : EventoDominio(DesastreId, AgregadoId, VersionAgregado, OcurridoEn);
+    Guid AlertaId, TipoAlerta Tipo, Guid ObjetoId, bool EnPlan = false) : EventoDominio(DesastreId, AgregadoId, VersionAgregado, OcurridoEn);
 
+/// <param name="EnPlan">La alerta está en el plan (necesidad no asignada) y no en un proyecto.</param>
 public sealed record AlertaResuelta(Guid DesastreId, Guid AgregadoId, long VersionAgregado, DateTimeOffset OcurridoEn,
-    Guid AlertaId, TipoAlerta Tipo) : EventoDominio(DesastreId, AgregadoId, VersionAgregado, OcurridoEn);
+    Guid AlertaId, TipoAlerta Tipo, bool EnPlan = false) : EventoDominio(DesastreId, AgregadoId, VersionAgregado, OcurridoEn);

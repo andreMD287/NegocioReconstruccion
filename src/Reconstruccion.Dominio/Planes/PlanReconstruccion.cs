@@ -139,7 +139,7 @@ public sealed class PlanReconstruccion : AgregadoRaiz
 
         foreach (var alerta in alertasNuevas)
         {
-            Registrar(new AlertaGenerada(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo, alerta.ObjetoId));
+            Registrar(new AlertaGenerada(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo, alerta.ObjetoId, EnPlan: true));
         }
 
         if (creadas.Count > 0)
@@ -210,7 +210,7 @@ public sealed class PlanReconstruccion : AgregadoRaiz
         var alerta = GenerarAlertaOrigen(necesidad, ahora);
         if (alerta is not null)
         {
-            Registrar(new AlertaGenerada(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo, alerta.ObjetoId));
+            Registrar(new AlertaGenerada(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo, alerta.ObjetoId, EnPlan: true));
         }
 
         return new ResultadoCambioOrigen(necesidad.Id, AlertaGeneradaEnPlan: true, null, false, false);
@@ -340,7 +340,7 @@ public sealed class PlanReconstruccion : AgregadoRaiz
         if (alerta is not null)
         {
             alerta.Resolver(ahora, justificacion);
-            Registrar(new AlertaResuelta(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo));
+            Registrar(new AlertaResuelta(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo, EnPlan: true));
         }
 
         EvaluarCompletitud(ahora);
@@ -374,7 +374,7 @@ public sealed class PlanReconstruccion : AgregadoRaiz
 
         IncrementarVersion();
         alerta.Resolver(ahora, justificacion);
-        Registrar(new AlertaResuelta(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo));
+        Registrar(new AlertaResuelta(DesastreId, Id, Version, ahora, alerta.Id, alerta.Tipo, EnPlan: true));
         EvaluarCompletitud(ahora);
     }
 
