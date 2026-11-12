@@ -7,4 +7,7 @@
     <Project Path="src/Reconstruccion.Host/Reconstruccion.Host.csproj" />
     <Project Path="src/Reconstruccion.Infraestructura/Reconstruccion.Infraestructura.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Reconstruccion.Integracion.Tests/Reconstruccion.Integracion.Tests.csproj" />
+  </Folder>
 </Solution>
