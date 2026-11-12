@@ -151,6 +151,96 @@ try
 
     Console.WriteLine("Necesidad y ubicacion inicial guardadas.");
 
+    // ==========================================
+    // VERIFICAR INDICE UNICO EN POSTGRESQL
+    // ==========================================
+
+    Console.WriteLine("Probando rechazo de evaluacion duplicada.");
+
+    await transaccion.SaveAsync("antes_duplicado");
+
+    var duplicadoRechazado = false;
+
+    try
+    {
+        await using var comando = new NpgsqlCommand(
+            """
+            INSERT INTO public.necesidades (
+                "Id",
+                evaluacion_id,
+                version_evaluacion,
+                activo_id,
+                tipo_activo,
+                nivel_dano,
+                fecha_validacion,
+                ubicacion,
+                "CicloRecepcion",
+                "Estado",
+                "ProyectoId",
+                "EvaluacionRevocada",
+                "UltimaJustificacion",
+                "PlanId"
+            )
+            SELECT
+                @nuevoId,
+                evaluacion_id,
+                version_evaluacion,
+                activo_id,
+                tipo_activo,
+                nivel_dano,
+                fecha_validacion,
+                ubicacion,
+                "CicloRecepcion",
+                "Estado",
+                "ProyectoId",
+                "EvaluacionRevocada",
+                "UltimaJustificacion",
+                "PlanId"
+            FROM public.necesidades
+            WHERE "Id" = @originalId;
+            """,
+            conexion,
+            transaccion
+        );
+
+        comando.Parameters.AddWithValue("nuevoId", Guid.NewGuid());
+        comando.Parameters.AddWithValue("originalId", necesidadIdReal);
+
+        var filas = await comando.ExecuteNonQueryAsync();
+
+        if (filas == 0)
+            throw new Exception("No se encontro la necesidad original.");
+    }
+    catch (PostgresException ex)
+        when (
+            ex.SqlState == PostgresErrorCodes.UniqueViolation &&
+            ex.ConstraintName ==
+                "UX_necesidades_PlanId_evaluacion_id"
+        )
+    {
+        duplicadoRechazado = true;
+
+        Console.WriteLine(
+            "PostgreSQL rechazo el duplicado con codigo 23505."
+        );
+
+        Console.WriteLine(
+            $"Indice responsable: {ex.ConstraintName}"
+        );
+    }
+    finally
+    {
+        await transaccion.RollbackAsync("antes_duplicado");
+        await transaccion.ReleaseAsync("antes_duplicado");
+    }
+
+    if (!duplicadoRechazado)
+        throw new Exception(
+            "ERROR: PostgreSQL no rechazo la evaluacion duplicada."
+        );
+
+    Console.WriteLine("PRUEBA DE UNICIDAD SUPERADA.");
+
     // B. Recuperar, comprobar y corregir la evaluacion
     using (var actualizacion = new ReconstruccionDbContext(opciones))
     {
