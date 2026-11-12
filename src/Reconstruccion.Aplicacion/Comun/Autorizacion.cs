@@ -37,4 +37,18 @@ public static class Autorizacion
             throw new NoAutorizadoException("El proyecto lo opera el Responsable asignado.");
         }
     }
+
+    /// <summary>
+    /// Para los casos de uso que admiten "Responsable o Autoridad" (sección 4): la Autoridad
+    /// puede operar cualquier proyecto; el Responsable, solo los que tiene asignados.
+    /// </summary>
+    public static void ExigirOperadorOAutoridad(IUsuarioActual usuario, ProyectoReconstruccion proyecto)
+    {
+        if (usuario.Rol == Rol.Autoridad)
+        {
+            return;
+        }
+
+        ExigirOperador(usuario, proyecto);
+    }
 }
