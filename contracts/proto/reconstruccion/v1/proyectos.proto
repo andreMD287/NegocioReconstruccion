@@ -4,6 +4,8 @@ package reconstruccion.v1;
 
 option csharp_namespace = "Reconstruccion.Contratos.V1";
 
+import "comunes.proto";
+
 // Contratos gRPC de comandos.
 // Alineados con los records de Aplicacion del commit c7a0531.
 // Los errores de negocio se comunican mediante estados gRPC.
@@ -57,6 +59,11 @@ service ProyectosService {
 }
 
 // ResultadoComando de Aplicacion.
+// Para operaciones de proyecto: id = proyecto_id.
+// DescartarNecesidad y ReactivarNecesidad:
+// id = necesidad_id; nueva_version = version del plan.
+// ResolverAlerta:
+// id = alerta_id; nueva_version = version del agregado de la alerta.
 message ResultadoComandoResponse {
   string id = 1;
   int64 nueva_version = 2;
@@ -101,19 +108,7 @@ message ReferenciaEvidenciaDtoGrpc {
   string ubicacion = 3;
 }
 
-enum TipoProyectoGrpc {
-  TIPO_PROYECTO_NO_ESPECIFICADO = 0;
-  TIPO_PROYECTO_RECUPERACION = 1;
-  TIPO_PROYECTO_RECONSTRUCCION = 2;
-}
 
-enum TipoDocumentoGrpc {
-  TIPO_DOCUMENTO_NO_ESPECIFICADO = 0;
-  TIPO_DOCUMENTO_ACTA_ENTREGA = 1;
-  TIPO_DOCUMENTO_CONTRATO = 2;
-  TIPO_DOCUMENTO_ADMINISTRATIVO = 3;
-  TIPO_DOCUMENTO_OTRO = 4;
-}
 
 enum UbicacionAlertaGrpc {
   UBICACION_ALERTA_NO_ESPECIFICADA = 0;

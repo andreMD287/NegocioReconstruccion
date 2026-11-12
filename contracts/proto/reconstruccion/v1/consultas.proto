@@ -5,6 +5,7 @@ package reconstruccion.v1;
 option csharp_namespace = "Reconstruccion.Contratos.V1";
 
 import "google/protobuf/timestamp.proto";
+import "comunes.proto";
 
 // Contratos de solo lectura.
 // Alineados con Aplicacion.Consultas e ILecturaReconstruccion.
@@ -25,8 +26,18 @@ service ConsultasService {
 }
 
 // Representa una entrada de los diccionarios de seguimiento.
-message ConteoPorCategoriaGrpc {
-  string categoria = 1;
+message ConteoPorEstadoProyectoGrpc {
+  EstadoProyectoGrpc estado = 1;
+  int32 cantidad = 2;
+}
+
+message ConteoPorEstadoNecesidadGrpc {
+  EstadoNecesidadGrpc estado = 1;
+  int32 cantidad = 2;
+}
+
+message ConteoPorTipoAlertaGrpc {
+  TipoAlertaGrpc tipo = 1;
   int32 cantidad = 2;
 }
 
@@ -38,18 +49,18 @@ message ConsultarSeguimientoConsolidadoRequest {
 // Equivale a SeguimientoConsolidadoDto.
 message SeguimientoConsolidadoResponse {
   string desastre_id = 1;
-  string estado_plan = 2;
+  EstadoPlanGrpc estado_plan = 2;
   int64 version_plan = 3;
 
-  repeated ConteoPorCategoriaGrpc proyectos_por_estado = 4;
+  repeated ConteoPorEstadoProyectoGrpc proyectos_por_estado = 4;
 
   // Decimales exactos representados como texto.
   string presupuesto_vigente_decimal = 5;
   string costo_ejecutado_decimal = 6;
   string avance_ponderado_decimal = 7;
 
-  repeated ConteoPorCategoriaGrpc necesidades_por_estado = 8;
-  repeated ConteoPorCategoriaGrpc alertas_activas = 9;
+  repeated ConteoPorEstadoNecesidadGrpc necesidades_por_estado = 8;
+  repeated ConteoPorTipoAlertaGrpc alertas_activas = 9;
 }
 
 // ConsultarDetalleProyecto.
@@ -70,7 +81,7 @@ message HitoVistaGrpc {
 // Equivale a CambioPresupuestalVistaDto.
 message CambioPresupuestalVistaGrpc {
   string cambio_id = 1;
-  string estado = 2;
+  EstadoCambioPresupuestalGrpc estado = 2;
 
   string presupuesto_anterior_decimal = 3;
   string presupuesto_nuevo_decimal = 4;
@@ -89,8 +100,8 @@ message CambioPresupuestalVistaGrpc {
 // Equivale a AlertaVistaDto.
 message AlertaVistaGrpc {
   string alerta_id = 1;
-  string tipo = 2;
-  string estado = 3;
+  TipoAlertaGrpc tipo = 2;
+  EstadoAlertaGrpc estado = 3;
   google.protobuf.Timestamp fecha = 4;
   string descripcion = 5;
 }
@@ -98,7 +109,7 @@ message AlertaVistaGrpc {
 // Equivale a DocumentoVistaDto.
 message DocumentoVistaGrpc {
   string documento_id = 1;
-  string tipo = 2;
+  TipoDocumentoGrpc tipo = 2;
   string nombre = 3;
   string ubicacion = 4;
   google.protobuf.Timestamp fecha_registro = 5;
@@ -111,8 +122,8 @@ message DetalleProyectoResponse {
   string nombre = 3;
   string descripcion = 4;
 
-  string tipo = 5;
-  string estado = 6;
+  TipoProyectoGrpc tipo = 5;
+  EstadoProyectoGrpc estado = 6;
   int64 version = 7;
 
   string formulador_id = 8;
@@ -149,13 +160,13 @@ message ConsultarHistorialAuditoriaRequest {
 message EntradaAuditoriaGrpc {
   google.protobuf.Timestamp fecha = 1;
   string usuario_id = 2;
-  string rol = 3;
+  RolGrpc rol = 3;
 
   string accion = 4;
   string tipo_objeto = 5;
   string objeto_id = 6;
 
-  string resultado = 7;
+  ResultadoOperacionGrpc resultado = 7;
   optional string detalle = 8;
 }
 

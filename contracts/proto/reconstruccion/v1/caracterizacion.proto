@@ -5,6 +5,7 @@ package reconstruccion.v1;
 option csharp_namespace = "Reconstruccion.Contratos.V1";
 
 import "google/protobuf/timestamp.proto";
+import "comunes.proto";
 
 // Contrato de entrada desde Caracterizacion.
 // Alineado con Reconstruccion.Aplicacion.Integracion.
@@ -115,12 +116,6 @@ enum RespuestaFinCaracterizacionGrpc {
 
 // Representacion de EstadoPlan.
 // El valor no especificado no es un estado de dominio.
-enum EstadoPlanGrpc {
-  ESTADO_PLAN_NO_ESPECIFICADO = 0;
-  ESTADO_PLAN_ABIERTO = 1;
-  ESTADO_PLAN_COMPLETADO = 2;
-  ESTADO_PLAN_CERRADO = 3;
-}
 
 // Equivale a ResultadoFinCaracterizacion.
 //

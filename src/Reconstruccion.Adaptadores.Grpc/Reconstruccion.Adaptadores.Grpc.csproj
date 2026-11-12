@@ -16,15 +16,18 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\caracterizacion.proto" GrpcServices="Server" />
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\caracterizacion.proto" GrpcServices="Server" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\proyectos.proto" GrpcServices="Server" />
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\proyectos.proto" GrpcServices="Server" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\consultas.proto" GrpcServices="Server" />
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\consultas.proto" GrpcServices="Server" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\cierre.proto" GrpcServices="Client" />
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\cierre.proto" GrpcServices="Client" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\comunes.proto" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" GrpcServices="None" />
   </ItemGroup>
 </Project>
