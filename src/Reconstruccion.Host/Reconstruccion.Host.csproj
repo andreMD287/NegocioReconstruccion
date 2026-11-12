@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Reconstruccion.Aplicacion\Reconstruccion.Aplicacion.csproj" />
+    <ProjectReference Include="..\Reconstruccion.Adaptadores.Grpc\Reconstruccion.Adaptadores.Grpc.csproj" />
+    <ProjectReference Include="..\Reconstruccion.Adaptadores.TiempoReal\Reconstruccion.Adaptadores.TiempoReal.csproj" />
+    <ProjectReference Include="..\Reconstruccion.Infraestructura\Reconstruccion.Infraestructura.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
