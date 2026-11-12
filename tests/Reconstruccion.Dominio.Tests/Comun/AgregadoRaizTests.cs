@@ -1,6 +1,5 @@
-using Reconstruccion.Dominio.Planes;
-using Reconstruccion.Dominio.Proyectos;
 using Reconstruccion.Dominio.Comun;
+using Reconstruccion.Dominio.Planes;
 
 namespace Reconstruccion.Dominio.Tests.Comun;
 
@@ -17,15 +16,14 @@ public class AgregadoRaizTests
     }
 
     [Fact]
-    public void Un_proyecto_nuevo_queda_Propuesto_con_su_formulador()
+    public void Un_proyecto_nuevo_queda_Propuesto_con_su_formulador_y_su_evento()
     {
-        var formulador = Guid.NewGuid();
-
-        var proyecto = ProyectoReconstruccion.Proponer(Guid.NewGuid(), Guid.NewGuid(), formulador);
+        var proyecto = Fabrica.ProyectoPropuesto(out var formulador);
 
         Assert.Equal(EstadoProyecto.Propuesto, proyecto.Estado);
         Assert.Equal(formulador, proyecto.FormuladorId);
         Assert.Null(proyecto.ResponsableId);
+        Assert.IsType<ProyectoCreado>(Assert.Single(proyecto.Eventos));
     }
 
     [Fact]
@@ -35,8 +33,13 @@ public class AgregadoRaizTests
     }
 
     [Fact]
-    public void No_se_crea_un_proyecto_sin_formulador()
+    public void Cada_operacion_incrementa_la_version_una_sola_vez()
     {
-        Assert.Throws<ArgumentException>(() => ProyectoReconstruccion.Proponer(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty));
+        var proyecto = Fabrica.ProyectoPropuesto(out _);
+        var antes = proyecto.Version;
+
+        proyecto.EditarPresupuesto(1000m, [new("Nacion", 1000m)]);
+
+        Assert.Equal(antes + 1, proyecto.Version);
     }
 }
