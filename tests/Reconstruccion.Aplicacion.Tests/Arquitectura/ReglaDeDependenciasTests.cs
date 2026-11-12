@@ -31,7 +31,7 @@ public class ReglaDeDependenciasTests
     {
         var comandosSinRequestId = Aplicacion.GetTypes()
             .Where(t => t.Namespace is "Reconstruccion.Aplicacion.Proyectos" or "Reconstruccion.Aplicacion.Planes")
-            .Where(t => t.IsClass && t.IsSealed && !t.IsNested && !t.Name.StartsWith('<') && t.Name is not ("AporteDto" or "ResponsableDto" or "ContratistaDto" or "HitoDto" or "ReferenciaEvidenciaDto"))
+            .Where(t => t.IsClass && !t.IsNested && t.GetMethod("<Clone>$") is not null && t.Name is not ("AporteDto" or "ResponsableDto" or "ContratistaDto" or "HitoDto" or "ReferenciaEvidenciaDto"))
             .Where(t => !typeof(IComando).IsAssignableFrom(t))
             .Select(t => t.Name)
             .ToList();
