@@ -265,6 +265,19 @@ public class ProyectoReconstruccionTests
     }
 
     [Fact]
+    public void Los_aportes_vigentes_son_copias_de_los_del_cambio_aprobado()
+    {
+        var proyecto = ProyectoAprobado(out _);
+        var cambio = proyecto.SolicitarCambio(1500m, [new Aporte("Nacion", 1500m)], "Ajuste", Guid.NewGuid(), Guid.NewGuid(), Ahora);
+
+        proyecto.ResolverCambio(cambio.Id, true, null, Guid.NewGuid(), Ahora);
+
+        // Iguales en valor, pero no la misma instancia: cada owned tiene un solo dueño al persistir.
+        Assert.Equal(cambio.NuevosAportes[0], proyecto.Aportes[0]);
+        Assert.False(ReferenceEquals(cambio.NuevosAportes[0], proyecto.Aportes[0]));
+    }
+
+    [Fact]
     public void Solo_el_solicitante_retira_su_cambio()
     {
         var proyecto = ProyectoAprobado(out _);
