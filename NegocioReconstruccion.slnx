@@ -10,5 +10,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/Reconstruccion.Aplicacion.Tests/Reconstruccion.Aplicacion.Tests.csproj" />
     <Project Path="tests/Reconstruccion.Dominio.Tests/Reconstruccion.Dominio.Tests.csproj" />
+    <Project Path="tests/Reconstruccion.Integracion.Tests/Reconstruccion.Integracion.Tests.csproj" />
   </Folder>
 </Solution>
