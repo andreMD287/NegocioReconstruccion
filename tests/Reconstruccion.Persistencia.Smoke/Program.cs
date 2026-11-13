@@ -10,6 +10,8 @@ var connectionString =
     Environment.GetEnvironmentVariable("RECONSTRUCCION_DB_CONNECTION")
     ?? throw new InvalidOperationException("Falta la conexion PostgreSQL.");
 
+PruebaRegistroDependencias.Ejecutar(connectionString);
+
 await using var conexion = new NpgsqlConnection(connectionString);
 await conexion.OpenAsync();
 
@@ -216,6 +218,10 @@ try
     await PruebaAdaptadores.EjecutarAsync(opciones, transaccion);
 
     await PruebaOutbox.EjecutarAsync(opciones, transaccion);
+
+    await PruebaUnidadDeTrabajo.EjecutarAsync(opciones, transaccion);
+
+    await PruebaConcurrenciaCostos.EjecutarAsync(opciones, transaccion);
 
     Console.WriteLine("Iniciando prueba de concurrencia.");
 
