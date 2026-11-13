@@ -213,6 +213,8 @@ try
     }
 
     Console.WriteLine("PRUEBA DE REPOSITORIOS SUPERADA.");
+    await PruebaAdaptadores.EjecutarAsync(opciones, transaccion);
+
     Console.WriteLine("Iniciando prueba de concurrencia.");
 
     using (var contextoA = new ReconstruccionDbContext(opciones))
