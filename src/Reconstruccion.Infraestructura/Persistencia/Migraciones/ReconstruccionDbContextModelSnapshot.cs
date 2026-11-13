@@ -115,6 +115,139 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones
                     b.ToTable("proyectos_reconstruccion", (string)null);
                 });
 
+            modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.Registros.AuditoriaPersistida", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("DesastreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Detalle")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ObjetoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Resultado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("TipoObjeto")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("DesastreId", "Fecha");
+
+                    b.HasIndex("ObjetoId", "Fecha");
+
+                    b.ToTable("auditoria_operaciones", (string)null);
+                });
+
+            modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.Registros.EventoOutboxPersistido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AgregadoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContenidoJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("DesastreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Intentos")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("OcurridoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PublicadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Secuencia")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Secuencia"));
+
+                    b.Property<string>("TipoEvento")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("UltimoError")
+                        .HasColumnType("text");
+
+                    b.Property<long>("VersionAgregado")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Secuencia")
+                        .IsUnique();
+
+                    b.HasIndex("DesastreId", "VersionAgregado", "Secuencia");
+
+                    b.HasIndex("PublicadoEn", "DesastreId", "VersionAgregado", "Secuencia");
+
+                    b.ToTable("eventos_outbox", (string)null);
+                });
+
+            modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.Registros.SolicitudProcesadaPersistida", b =>
+                {
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HuellaContenido")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RespuestaSerializada")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TipoComando")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("RequestId");
+
+                    b.ToTable("solicitudes_procesadas", (string)null);
+                });
+
             modelBuilder.Entity("Reconstruccion.Dominio.Planes.PlanReconstruccion", b =>
                 {
                     b.OwnsMany("Reconstruccion.Dominio.Planes.Necesidad", "Necesidades", b1 =>
