@@ -37,6 +37,7 @@ public sealed class UnidadDeTrabajoEf(
                 SqlState: PostgresErrorCodes.UniqueViolation,
                 ConstraintName: "IX_planes_reconstruccion_DesastreId"
                     or "UX_necesidades_PlanId_evaluacion_id"
+                    or "PK_solicitudes_procesadas"
             })
         {
             throw new ConflictoDeVersionException(

@@ -215,9 +215,9 @@ internal static class PruebaUnidadDeTrabajo
             Console.WriteLine(
                 "ATOMICIDAD SUPERADA: el fallo no guardo datos parciales.");
 
-            // CASO 4: un RequestId duplicado no debe convertirse
-            // incorrectamente en conflicto de version.
-            var duplicadoSinTraducir = false;
+            // CASO 4: un RequestId duplicado debe convertirse
+            // en conflicto reintentable, conservando el error 23505.
+            var duplicadoComoConflicto = false;
 
             using (var db = new ReconstruccionDbContext(opciones))
             {
@@ -234,23 +234,24 @@ internal static class PruebaUnidadDeTrabajo
                 {
                     await new UnidadDeTrabajoEf(db).ConfirmarAsync();
                 }
-                catch (DbUpdateException ex)
-                    when (ex.InnerException is PostgresException pg &&
+                catch (ConflictoDeVersionException ex)
+                    when (ex.InnerException is DbUpdateException errorEf &&
+                          errorEf.InnerException is PostgresException pg &&
                           pg.SqlState == PostgresErrorCodes.UniqueViolation &&
                           pg.ConstraintName == "PK_solicitudes_procesadas")
                 {
-                    duplicadoSinTraducir = true;
+                    duplicadoComoConflicto = true;
                 }
             }
 
-            if (!duplicadoSinTraducir)
+            if (!duplicadoComoConflicto)
             {
                 throw new Exception(
                     "RequestId duplicado no tuvo el tratamiento esperado.");
             }
 
             Console.WriteLine(
-                "IDEMPOTENCIA SUPERADA: RequestId duplicado conserva error propio.");
+                "IDEMPOTENCIA SUPERADA: RequestId duplicado genera conflicto reintentable.");
 
             // El registro original debe continuar intacto.
             using (var db = new ReconstruccionDbContext(opciones))
