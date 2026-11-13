@@ -61,6 +61,7 @@ public sealed class EventoOutboxPersistido
     private EventoOutboxPersistido() { }
 
     public EventoOutboxPersistido(
+        Guid eventoId,
         Guid desastreId,
         Guid agregadoId,
         long versionAgregado,
@@ -68,7 +69,7 @@ public sealed class EventoOutboxPersistido
         string tipoEvento,
         string contenidoJson)
     {
-        Id = Guid.NewGuid();
+        Id = eventoId;
         DesastreId = desastreId;
         AgregadoId = agregadoId;
         VersionAgregado = versionAgregado;
