@@ -108,14 +108,12 @@ public sealed class EventoOutboxPersistidoConfiguration
         {
             x.PublicadoEn,
             x.DesastreId,
-            x.VersionAgregado,
             x.Secuencia
         });
 
         builder.HasIndex(x => new
         {
             x.DesastreId,
-            x.VersionAgregado,
             x.Secuencia
         });
     }

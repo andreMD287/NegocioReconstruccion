@@ -217,9 +217,9 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones
                     b.HasIndex("Secuencia")
                         .IsUnique();
 
-                    b.HasIndex("DesastreId", "VersionAgregado", "Secuencia");
+                    b.HasIndex("DesastreId", "Secuencia");
 
-                    b.HasIndex("PublicadoEn", "DesastreId", "VersionAgregado", "Secuencia");
+                    b.HasIndex("PublicadoEn", "DesastreId", "Secuencia");
 
                     b.ToTable("eventos_outbox", (string)null);
                 });
