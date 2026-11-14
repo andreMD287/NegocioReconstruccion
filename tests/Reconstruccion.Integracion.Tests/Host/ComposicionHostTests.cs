@@ -60,6 +60,28 @@ public class ComposicionHostTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => cierre.NotificarPlanCompletadoAsync(Guid.NewGuid(), 1));
     }
 
+    [Fact]
+    public void Con_direccion_de_Cierre_se_usa_el_cliente_gRPC_real()
+    {
+        using var proveedor = Construir(new() { ["Cierre:Direccion"] = "https://cierre.example.test" });
+        using var alcance = proveedor.CreateScope();
+
+        var cierre = alcance.ServiceProvider.GetRequiredService<IServicioCierre>();
+
+        Assert.Equal("ServicioCierreGrpc", cierre.GetType().Name);
+    }
+
+    [Fact]
+    public void El_Host_registra_el_publicador_del_outbox_y_la_vigilancia()
+    {
+        using var proveedor = Construir();
+
+        var procesos = proveedor.Servicios.GetServices<IHostedService>().Select(s => s.GetType().Name).ToList();
+
+        Assert.Contains("PublicadorOutboxServicio", procesos);
+        Assert.Contains(nameof(Reconstruccion.Host.Procesos.VigilanciaCronogramaServicio), procesos);
+    }
+
     // --- Hub: autorización de grupos (sección 8.2) -------------------------------------
 
     [Fact]
@@ -97,16 +119,22 @@ public class ComposicionHostTests
     // --- Ayudas ---------------------------------------------------------------------------
 
     /// <summary>Construye el Host real (sin arrancarlo) y valida todas las dependencias al construir.</summary>
-    private static Aplicacion Construir()
+    private static Aplicacion Construir(Dictionary<string, string?>? extra = null)
     {
         var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(
             new Microsoft.AspNetCore.Builder.WebApplicationOptions { EnvironmentName = "Testing" });
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        var configuracion = new Dictionary<string, string?>
         {
             ["ConnectionStrings:Reconstruccion"] = "Host=localhost;Database=no_se_usa;Username=x;Password=x",
             ["Vigilancia:Habilitada"] = "false",
             ["Jwt:Clave"] = "clave-de-prueba-con-mas-de-treinta-y-dos-caracteres"
-        });
+        };
+        foreach (var (clave, valor) in extra ?? [])
+        {
+            configuracion[clave] = valor;
+        }
+
+        builder.Configuration.AddInMemoryCollection(configuracion);
         builder.Host.UseDefaultServiceProvider(o =>
         {
             o.ValidateOnBuild = true;
@@ -119,6 +147,8 @@ public class ComposicionHostTests
 
     private sealed class Aplicacion(Microsoft.AspNetCore.Builder.WebApplication app) : IDisposable
     {
+        public IServiceProvider Servicios => app.Services;
+
         public IServiceScope CreateScope() => app.Services.CreateScope();
 
         public void Dispose() => ((IDisposable)app).Dispose();

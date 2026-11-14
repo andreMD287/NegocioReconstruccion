@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Reconstruccion.Adaptadores.Grpc.Clientes;
 using Reconstruccion.Adaptadores.TiempoReal;
 using Reconstruccion.Aplicacion.Comun;
 using Reconstruccion.Aplicacion.Puertos;
@@ -6,6 +7,7 @@ using Reconstruccion.Host.Procesos;
 using Reconstruccion.Host.Seguridad;
 using Reconstruccion.Infraestructura.Persistencia;
 using Reconstruccion.Infraestructura.Persistencia.Lectura;
+using Reconstruccion.Infraestructura.Persistencia.Publicacion;
 
 namespace Reconstruccion.Host;
 
@@ -44,9 +46,23 @@ public static class Composicion
         servicios.AddSignalR();
         servicios.AddScoped<INotificadorTiempoReal, NotificadorSignalR>();
 
-        // Cliente hacia Cierre: si Infraestructura no registró uno, queda uno que pide reintento,
-        // de modo que los eventos para Cierre esperan en el outbox (sección 5.3).
+        // Cliente gRPC hacia Cierre con timeouts, reintentos y circuit breaker. Sin dirección
+        // configurada queda el provisional, que pide reintento: los eventos para Cierre esperan
+        // en el outbox (sección 5.3).
+        var direccionCierre = configuracion["Cierre:Direccion"];
+        if (!string.IsNullOrWhiteSpace(direccionCierre))
+        {
+            servicios.AgregarClienteCierreGrpc(direccionCierre);
+        }
+
         servicios.TryAddScoped<IServicioCierre, ServicioCierreNoConfigurado>();
+
+        // Publicador del outbox: entrega los eventos confirmados a SignalR y a Cierre, en orden
+        // por desastre, con la identidad Sistema (sección 8.2).
+        var segundosPublicador = configuracion.GetValue("Publicador:IntervaloSegundos", 5);
+        servicios.AgregarPublicadorOutbox(
+            sp => sp.GetRequiredService<UsuarioActualAmbito>().ComoSistema(),
+            TimeSpan.FromSeconds(Math.Max(1, segundosPublicador)));
 
         // gRPC y vigilancia del cronograma.
         servicios.AddGrpc();

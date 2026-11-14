@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -23,4 +23,7 @@
     <ProjectReference Include="..\..\src\Reconstruccion.Host\Reconstruccion.Host.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Reconstruccion.Adaptadores.Grpc\Reconstruccion.Adaptadores.Grpc.csproj" />
+  </ItemGroup>
 </Project>
