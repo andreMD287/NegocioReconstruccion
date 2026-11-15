@@ -18,13 +18,15 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\caracterizacion.proto" GrpcServices="Server" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
+    <!-- "Both": además del servidor que implementan los Servicios*Grpc, genera el cliente
+         que usan tools/ClienteDemo y las pruebas de punta a punta (sección 9.5). -->
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\caracterizacion.proto" GrpcServices="Both" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\proyectos.proto" GrpcServices="Server" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\proyectos.proto" GrpcServices="Both" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\consultas.proto" GrpcServices="Server" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
+    <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\consultas.proto" GrpcServices="Both" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="..\..\contracts\proto\reconstruccion\v1\cierre.proto" GrpcServices="Client" ProtoRoot="..\..\contracts\proto\reconstruccion\v1" />

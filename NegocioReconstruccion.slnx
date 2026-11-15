@@ -12,4 +12,7 @@
     <Project Path="tests/Reconstruccion.Dominio.Tests/Reconstruccion.Dominio.Tests.csproj" />
     <Project Path="tests/Reconstruccion.Integracion.Tests/Reconstruccion.Integracion.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/ClienteDemo/Reconstruccion.ClienteDemo.csproj" />
+  </Folder>
 </Solution>
