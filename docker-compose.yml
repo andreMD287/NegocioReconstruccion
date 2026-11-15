@@ -49,6 +49,33 @@ services:
       postgres:
         condition: service_healthy
 
+  host:
+    build:
+      context: .
+      dockerfile: src/Reconstruccion.Host/Dockerfile
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Reconstruccion: "Host=postgres;Port=5432;Database=reconstruccion_demo;Username=reconstruccion_demo;Password=${RECONSTRUCCION_DEMO_DB_PASSWORD:?Falta_password_de_demo}"
+      Jwt__Emisor: reconstruccion
+      Jwt__Audiencia: reconstruccion
+      Jwt__Clave: "clave-de-desarrollo-solo-para-la-demo-local-32+"
+      Cierre__Direccion: "http://cierre-simulado:56051"
+      Publicador__IntervaloSegundos: "5"
+      Vigilancia__Habilitada: "false"
+      Migraciones__AplicarAlIniciar: "true"
+
+    ports:
+      - "127.0.0.1:56050:8081"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cierre-simulado:
+        condition: service_started
+
+    restart: unless-stopped
+
 volumes:
   postgres_datos:
   cierre_datos:

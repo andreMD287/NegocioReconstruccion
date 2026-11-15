@@ -4,12 +4,18 @@
 
 Esta guía permite reproducir la infraestructura de demostración del proyecto NegocioReconstruccion.
 
-Componentes:
+Componentes, todos ejecutados en contenedores Docker:
 
-- Host desarrollado en .NET 10.
-- PostgreSQL 16 mediante Docker Compose.
+- Host desarrollado en .NET 10 (gRPC, SignalR y autenticación JWT).
+- PostgreSQL 16.
 - Servicio gRPC CierreSimulado.
+
+Y un cliente externo, que se ejecuta fuera de Docker porque representa a un sistema cliente real (igual que Caracterización o un operador):
+
 - ClienteDemo para ejecutar el Escenario E.
+
+Capacidades cubiertas por la infraestructura:
+
 - Comunicación en tiempo real mediante SignalR.
 - Procesamiento de eventos mediante Outbox.
 - Persistencia mediante volúmenes Docker.
@@ -20,11 +26,9 @@ Esta infraestructura está diseñada exclusivamente para desarrollo, pruebas y s
 
 Se necesita:
 
-- .NET SDK 10.
+- .NET SDK 10 (solo para ejecutar ClienteDemo; el Host se compila y corre dentro de su propio contenedor).
 - Docker Desktop con Docker Compose.
 - PowerShell en Windows.
-- Certificado HTTPS de desarrollo de ASP.NET Core.
-- Herramienta dotnet-ef.
 - Repositorio NegocioReconstruccion.
 
 Ejecutar los comandos desde la raíz del repositorio.
@@ -76,11 +80,9 @@ Servicios locales:
 | PostgreSQL 16 | 127.0.0.1:55435 |
 | CierreSimulado gRPC | http://127.0.0.1:56051 |
 | Administración de Cierre | http://127.0.0.1:56052 |
-| Host HTTPS | https://localhost:56050 |
+| Host HTTPS (gRPC y SignalR) | https://localhost:56050 |
 
-El Host se ejecuta en Windows, mientras PostgreSQL y CierreSimulado funcionan en Docker.
-
-Los puertos publicados de los contenedores están restringidos a la interfaz local de Windows.
+Los tres componentes corren en contenedores propios; este único comando los compila y arranca. Los puertos publicados están restringidos a la interfaz local de Windows.
 
 ## 5. Verificar los contenedores
 
@@ -96,11 +98,17 @@ Consultar el estado:
 
     Invoke-RestMethod "http://127.0.0.1:56052/admin/estado"
 
-PostgreSQL debe aceptar conexiones y CierreSimulado debe responder correctamente.
+Comprobar el Host:
 
-## 6. Aplicar migraciones de Entity Framework Core
+    Invoke-RestMethod "https://localhost:56050/" -SkipCertificateCheck
 
-Restaurar las herramientas locales:
+PostgreSQL y CierreSimulado deben responder correctamente, y el Host debe devolver el mensaje de servicios gRPC y SignalR. El Host usa un certificado HTTPS autofirmado generado dentro de su propia imagen (no el certificado de desarrollo de Windows); por eso esta comprobación necesita `-SkipCertificateCheck`, igual que ClienteDemo, que tampoco valida la cadena de confianza del certificado.
+
+## 6. Migraciones de Entity Framework Core
+
+El Host las aplica automáticamente al iniciar (variable `Migraciones__AplicarAlIniciar` en `docker-compose.yml`); no es necesario ningún paso manual para la demostración.
+
+Para aplicarlas o revisarlas manualmente desde Windows (por ejemplo, para inspeccionar el esquema sin levantar el Host), restaurar las herramientas locales:
 
     dotnet tool restore
 
@@ -157,74 +165,15 @@ Las migraciones aplicadas quedan registradas en __EFMigrationsHistory.
 
 No generar nuevamente las migraciones.
 
-## 7. Preparar HTTPS
+## 7. El Host
 
-Comprobar el certificado:
+El Host ya quedó en ejecución desde el paso 4, dentro de su propio contenedor, escuchando HTTPS en el puerto publicado 56050. No requiere ninguna variable de entorno ni comando adicional en Windows: la cadena de conexión, la clave JWT y la dirección de CierreSimulado ya están configuradas como variables de entorno del servicio `host` en `docker-compose.yml`.
 
-    dotnet dev-certs https --check --trust
-
-Si todavía no es de confianza:
-
-    dotnet dev-certs https --trust
-
-Confirmar nuevamente:
-
-    dotnet dev-certs https --check --trust
-
-HTTPS permite que el Host utilice HTTP/2 para gRPC y atienda las demás conexiones HTTP necesarias para la demo.
-
-## 8. Iniciar el Host
-
-Abrir una nueva terminal PowerShell desde la raíz del repositorio.
-
-Cargar nuevamente la contraseña:
-
-    $lineas = @(
-        Get-Content ".env.demo.local" |
-            Where-Object {
-                $_ -match '^RECONSTRUCCION_DEMO_DB_PASSWORD=[A-Fa-f0-9]{48}$'
-            }
-    )
-
-    if ($lineas.Count -ne 1) {
-        throw "No se encontro la contrasena local."
-    }
-
-    $password = $lineas[0].Split("=", 2)[1]
-
-Configurar las variables:
-
-    $env:ASPNETCORE_ENVIRONMENT = "Development"
-    $env:DOTNET_ENVIRONMENT = "Development"
-    $env:ASPNETCORE_URLS = "https://localhost:56050"
-
-    $env:ConnectionStrings__Reconstruccion = "Host=127.0.0.1;Port=55435;Database=reconstruccion_demo;Username=reconstruccion_demo;Password=$password"
-
-    $env:Cierre__Direccion = "http://127.0.0.1:56051"
-
-Iniciar:
-
-    dotnet run --no-launch-profile --project src/Reconstruccion.Host/Reconstruccion.Host.csproj
-
-El Host debe indicar:
-
-    Now listening on: https://localhost:56050
-    Application started.
-    Hosting environment: Development
-
-Mantener abierta esta terminal.
-
-Desde otra terminal verificar:
-
-    Invoke-RestMethod "https://localhost:56050/"
-
-El Host debe responder con el mensaje de servicios gRPC y SignalR.
-
-La configuración JWT de Development debe estar preparada en cada entorno. No compartir claves privadas ni reemplazar configuraciones existentes sin revisarlas.
+La configuración JWT de Development usada en la demo no debe reutilizarse en un entorno real; no compartir claves privadas ni reemplazar configuraciones existentes sin revisarlas.
 
 El endpoint /dev/token es exclusivamente para pruebas locales en Development.
 
-## 9. Ejecutar ClienteDemo
+## 8. Ejecutar ClienteDemo
 
 Con Docker y el Host funcionando, abrir otra terminal.
 
@@ -253,7 +202,7 @@ En condiciones normales, el resultado esperado es EstadoPlanCerrado.
 
 El cliente genera datos reales de demostración dentro de PostgreSQL.
 
-## 10. Modos de CierreSimulado
+## 9. Modos de CierreSimulado
 
 Modo normal:
 
@@ -279,7 +228,7 @@ Después de demostrar una falla, restaurar siempre el modo aceptar.
 
 El puerto administrativo debe permanecer restringido al entorno local de demostración.
 
-## 11. Escenarios de fallo
+## 10. Escenarios de fallo
 
 ### Fallo 1: proyecto con hitos incompletos
 
@@ -310,7 +259,7 @@ Por esa razón pueden observarse notificaciones repetidas mediante SignalR.
 
 Los consumidores deben implementar procesamiento idempotente.
 
-## 12. Comprobar el Outbox
+## 11. Comprobar el Outbox
 
 Consultar eventos pendientes desde PowerShell:
 
@@ -322,7 +271,7 @@ Un resultado de cero indica que, en el instante de la consulta, no existen event
 
 No significa que nunca puedan existir nuevos eventos pendientes.
 
-## 13. Persistencia
+## 12. Persistencia
 
 Los contenedores utilizan dos volúmenes:
 
@@ -335,7 +284,7 @@ No ejecutar docker compose down -v durante la demostración.
 
 No borrar los volúmenes sin autorización del equipo.
 
-## 14. Evidencias de validación
+## 13. Evidencias de validación
 
 Validaciones realizadas sobre la infraestructura completa (Docker Compose, PostgreSQL 16 y CierreSimulado reales):
 
@@ -351,8 +300,9 @@ Validaciones realizadas sobre la infraestructura completa (Docker Compose, Postg
 - Notificación recuperada después de restaurar Cierre.
 - Outbox verificado con cero eventos pendientes.
 - Estado Cerrado confirmado, tras la recuperación, mediante una consulta gRPC independiente (un cliente y un token distintos de los que generaron los datos), no solo mediante los eventos SignalR de la misma sesión de demostración.
+- Host compilado y ejecutado dentro de su propio contenedor (no en Windows), con migraciones aplicadas automáticamente al iniciar: el Escenario E completo, incluidas las tres pruebas de fallo, se repitió contra esa versión totalmente contenerizada con el mismo resultado.
 
-## 15. Recomendaciones para la sustentación
+## 14. Recomendaciones para la sustentación
 
 Antes de iniciar:
 
@@ -371,7 +321,7 @@ No exponer los endpoints administrativos ni los tokens de desarrollo a redes pú
 
 No modificar o eliminar la información persistida sin autorización.
 
-## 16. Referencias técnicas del proyecto
+## 15. Referencias técnicas del proyecto
 
 - contracts/proto/reconstruccion/v1/cierre.proto
 - tools/CierreSimulado

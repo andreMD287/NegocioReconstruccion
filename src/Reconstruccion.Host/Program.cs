@@ -1,8 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using Reconstruccion.Adaptadores.Grpc.Servicios;
 using Reconstruccion.Adaptadores.TiempoReal;
 using Reconstruccion.Aplicacion.Puertos;
 using Reconstruccion.Host;
 using Reconstruccion.Host.Seguridad;
+using Reconstruccion.Infraestructura.Persistencia;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,14 @@ builder.Services.AgregarAutenticacionJwt(builder.Configuration);
 builder.Services.AgregarReconstruccion(builder.Configuration);
 
 var app = builder.Build();
+
+if (app.Configuration.GetValue("Migraciones:AplicarAlIniciar", false))
+{
+    // Solo para el contenedor de demostración (docker-compose.yml): evita depender de que
+    // el host de Windows tenga instalada la herramienta dotnet-ef para aplicar migraciones.
+    using var alcance = app.Services.CreateScope();
+    await alcance.ServiceProvider.GetRequiredService<ReconstruccionDbContext>().Database.MigrateAsync();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
