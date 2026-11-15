@@ -1,0 +1,54 @@
+name: reconstruccion-sustentacion-2026
+
+services:
+
+  postgres:
+    image: postgres:16
+
+    environment:
+      POSTGRES_DB: reconstruccion_demo
+      POSTGRES_USER: reconstruccion_demo
+      POSTGRES_PASSWORD: "${RECONSTRUCCION_DEMO_DB_PASSWORD:?Falta_password_de_demo}"
+
+    ports:
+      - "127.0.0.1:55435:5432"
+
+    volumes:
+      - postgres_datos:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U reconstruccion_demo -d reconstruccion_demo
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+    restart: unless-stopped
+
+  cierre-simulado:
+    build:
+      context: .
+      dockerfile: tools/CierreSimulado/Dockerfile
+
+    environment:
+      CIERRE_SIMULADO_GRPC_PUERTO: "56051"
+      CIERRE_SIMULADO_ADMIN_PUERTO: "56052"
+      CIERRE_SIMULADO_ADMIN_CONTENEDOR: "1"
+      CIERRE_SIMULADO_ARCHIVO: "/app/datos/notificaciones.jsonl"
+
+    ports:
+      - "127.0.0.1:56051:56051"
+      - "127.0.0.1:56052:56052"
+
+    volumes:
+      - cierre_datos:/app/datos
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_datos:
+  cierre_datos:
