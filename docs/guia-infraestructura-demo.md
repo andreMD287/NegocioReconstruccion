@@ -27,8 +27,6 @@ Se necesita:
 - Herramienta dotnet-ef.
 - Repositorio NegocioReconstruccion.
 
-Rama de integración: feature/host.
-
 Ejecutar los comandos desde la raíz del repositorio.
 
 ## 3. Generar credenciales locales
@@ -339,24 +337,20 @@ No borrar los volúmenes sin autorización del equipo.
 
 ## 14. Evidencias de validación
 
-Pruebas realizadas por Andrés:
+Validaciones realizadas sobre la infraestructura completa (Docker Compose, PostgreSQL 16 y CierreSimulado reales):
 
 - CierreSimulado compilado y publicado.
 - Pruebas gRPC de aceptación, rechazo, idempotencia e indisponibilidad.
 - Persistencia de notificaciones comprobada tras reinicio.
-- PostgreSQL 16 iniciado correctamente.
-- Cuatro migraciones aplicadas.
+- PostgreSQL 16 iniciado correctamente y cuatro migraciones aplicadas.
 - Host iniciado con HTTPS.
-- ClienteDemo ejecutado contra PostgreSQL y CierreSimulado reales.
-- Escenario E terminado con EstadoPlanCerrado.
+- ClienteDemo ejecutado contra PostgreSQL y CierreSimulado reales; Escenario E terminado con EstadoPlanCerrado.
 - Notificación de cierre registrada.
 - Pruebas de hitos incompletos y evaluación duplicada.
-- Caída de Cierre simulada.
-- Plan conservado en Completado durante la indisponibilidad.
+- Caída de Cierre simulada; plan conservado en Completado durante la indisponibilidad.
 - Notificación recuperada después de restaurar Cierre.
 - Outbox verificado con cero eventos pendientes.
-
-La consulta independiente del estado Cerrado después de la última recuperación permanece como comprobación adicional pendiente.
+- Estado Cerrado confirmado, tras la recuperación, mediante una consulta gRPC independiente (un cliente y un token distintos de los que generaron los datos), no solo mediante los eventos SignalR de la misma sesión de demostración.
 
 ## 15. Recomendaciones para la sustentación
 
@@ -386,5 +380,3 @@ No modificar o eliminar la información persistida sin autorización.
 - src/Reconstruccion.Infraestructura/Persistencia/Migraciones
 - tests/Reconstruccion.Integracion.Tests/PuntaAPunta
 - docker-compose.yml
-
-La infraestructura se publica en la rama feature/host para su integración y sustentación por el equipo.
